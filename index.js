@@ -3,6 +3,11 @@
 const Hashids = require('hashids');
 const NODE_ENV = process.env.NODE_ENV;
 const isProduction = (NODE_ENV === 'production');
+const IGNORE_AUTH_PATH_REGEX = process.env.IGNORE_AUTH_PATH_REGEX || /(web)/;
+
+function isIgnoredPath(path) {
+  return path.search(IGNORE_AUTH_PATH_REGEX) >= 0;
+}
 
 function hashKeyMiddlewareWrapper (options = {
   salt: process.env.SALT || 'my salt',
@@ -14,6 +19,10 @@ function hashKeyMiddlewareWrapper (options = {
   const HASHKEY_ALIVE_TIME = options.hashkeyAliveTime  * 60 * 1000;
 
   return function hashKeyMiddleware(req, res, next) {
+    if (isIgnoredPath(req.path)) {
+      return next();
+    }
+
     const hashKey = req.query.hashkey || req.query.access_token;
     const decodedKey = idHashids.decode(hashKey);
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
