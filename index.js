@@ -1,6 +1,6 @@
 'use strict';
 
-const Hashids = require('hashids');
+const Hashids = require('hashids/cjs');
 const NODE_ENV = process.env.NODE_ENV;
 const isProduction = (NODE_ENV === 'production');
 const IGNORE_AUTH_PATH_REGEX = process.env.IGNORE_AUTH_PATH_REGEX || /(web)/;
@@ -9,14 +9,34 @@ function isIgnoredPath(path) {
   return path.search(IGNORE_AUTH_PATH_REGEX) >= 0;
 }
 
+function genHashId(idHashids, id = 141236) {
+  const time = Date.now();    // Timestamp
+  const idHash = idHashids.encode([id, time]);  // encode id and time to fake hex
+  return idHash;
+}
+
+function decHashId(idHashids, encrypted) {
+  const decoded = idHashids.decode(encrypted);
+  return decoded;
+}
+
 function hashKeyMiddlewareWrapper (options = {
   salt: process.env.SALT || 'my salt',
   hashkeyAliveTime: process.env.HASHKEY_ALIVE_TIME || 15,
+  isMainModule: false,
 }) {
   const hashSalt = options.salt;
-  const idHashids = new Hashids(hashSalt, 32, '0123456789abcdef');
   // Hashkey alive time (minutes)
   const HASHKEY_ALIVE_TIME = options.hashkeyAliveTime  * 60 * 1000;
+  const idHashids = new Hashids(hashSalt, 32, '0123456789abcdef');
+
+  if (options.isMainModule === true) {
+    const hashid = genHashId(idHashids, process.argv[2]);
+    return {
+      hashid,
+      decoded: decHashId(idHashids, hashid),
+    };
+  }
 
   return function hashKeyMiddleware(req, res, next) {
     if (isIgnoredPath(req.path)) {
@@ -24,7 +44,7 @@ function hashKeyMiddlewareWrapper (options = {
     }
 
     const hashKey = req.query.hashkey || req.query.access_token;
-    const decodedKey = idHashids.decode(hashKey);
+    const decodedKey = decHashId(idHashids, hashKey);
     const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
     const err = new Error('E_ACCESS_DENIED');
           err.name = 'E_ACCESS_DENIED';
@@ -50,4 +70,13 @@ function hashKeyMiddlewareWrapper (options = {
   };
 };
 
-module.exports = hashKeyMiddlewareWrapper;
+if (require.main === module) {
+  const hashid = hashKeyMiddlewareWrapper({
+    salt: process.env.SALT,
+    isMainModule: true,
+  });
+
+  console.log(hashid);
+} else {
+  module.exports = hashKeyMiddlewareWrapper;
+}
