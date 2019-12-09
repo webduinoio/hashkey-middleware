@@ -6,7 +6,7 @@ hashkey-middleware
 CLI Usage
 ---------
 
-    node index.js [number]
+    node index.js [number|hashkey]
 
 Hashkey
 ---------

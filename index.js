@@ -32,9 +32,11 @@ function hashKeyMiddlewareWrapper (options = {
 
   if (options.isMainModule === true) {
     const hashid = genHashId(idHashids, process.argv[2]);
+    let decoded = decHashId(idHashids, process.argv[2]);
+        decoded = { id: decoded[0], time: new Date(decoded[1]) };
     return {
       hashid,
-      decoded: decHashId(idHashids, hashid),
+      decoded: decoded || decHashId(idHashids, hashid),
     };
   }
 
