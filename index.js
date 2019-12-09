@@ -3,10 +3,10 @@
 const Hashids = require('hashids/cjs');
 const NODE_ENV = process.env.NODE_ENV;
 const isProduction = (NODE_ENV === 'production');
-const IGNORE_AUTH_PATH_REGEX = process.env.IGNORE_AUTH_PATH_REGEX || /(web)/;
+const IGNORE_AUTH_PATH_REGEX = process.env.IGNORE_AUTH_PATH_REGEX || '';
 
 function isIgnoredPath(path) {
-  return path.search(IGNORE_AUTH_PATH_REGEX) >= 0;
+  return IGNORE_AUTH_PATH_REGEX !== '' && path.search(IGNORE_AUTH_PATH_REGEX) >= 0;
 }
 
 function genHashId(idHashids, id = 141236) {
