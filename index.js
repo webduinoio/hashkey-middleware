@@ -52,6 +52,7 @@ function hashKeyMiddlewareWrapper (options = {
           err.name = 'E_ACCESS_DENIED';
           err.statusCode = 403;
 
+    res.locals.ip = ip;
     if (decodedKey.length < 2) {
       next(err);
       return;
@@ -67,7 +68,6 @@ function hashKeyMiddlewareWrapper (options = {
 
     res.locals.userId = decodedKey[0];
     res.locals.hashKey = hashKey;
-    res.locals.ip = ip;
     next();
   };
 };
